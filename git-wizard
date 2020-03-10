@@ -128,6 +128,7 @@ git-general()
 
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
 	act untracked a "Add and stage" 'add --interactive'
+	act untracked l "Cleanup" 'clean --interactive -d'
 	# TODO: add to .gitignore
 
 	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
