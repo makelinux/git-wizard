@@ -43,14 +43,23 @@ prs() { prop_git "s" "$1" "$2" "$3" }
 # linking available git actions
 # with properties
 
-act()
+# internal action
+acti()
 {
 	actprop+=($1)
+	[[ "${actkey[(ie)$2]}" -le "${#actkey}" ]] && echo "duplicated key $2"
 	actkey+=("$2")
 	conf+=("$3")
-	act+=("git $4")
+	flag[$1]+=a
+	act+=($4)
 	shift 4
 	[ "$1" ] && echo unclaimed "$@"
+}
+
+# git action
+actg()
+{
+	acti $1 $2 $3 "git $4"
 }
 
 
@@ -59,15 +68,19 @@ perform-actions()
 {
 	declare -a kk
 	declare -A actk
-	kk=(l)
-	actk[l]=report-long
-	echo " [l] - Long status"
-	for n ({1..${#actprop}}) {
-		v=$prop[$actprop[$n]]
+	for key ($keys) {
+		v=$prop[$key]
+		[[ ! $flag[$key] =~ a ]] && continue
 		[[ -z "$v" || "$v" == 0 ]] && continue
-		kk+=($actkey[$n])
-		actk[$actkey[$n]]=$act[$n]
-		echo " [$actkey[$n]] - $conf[$n]"
+
+		print "What to do with $(prop-print $key) ?"
+
+		for n ({1..${#actprop}}) {
+			[[ $actprop[$n] != $key ]] && continue
+			kk+=($actkey[$n])
+			actk[$actkey[$n]]=$act[$n]
+			echo " [$actkey[$n]] - $conf[$n]"
+		}
 	}
 	echo " * - exit"
 	read -r -k "?>"
@@ -77,36 +90,45 @@ perform-actions()
 	echo
 }
 
-report-short()
+prop-print()
+{
+	key=$1
+	m=$msg[$key]
+	if [[ $m =~ '@v' ]]; then
+		m=${m/@v/$prop[$key]}
+	else
+		m="$prop[$key] $m"
+	fi
+	p="$prop[$key]"
+	[[ $p =~ '^[0-9]+$' ]] && [ $p -gt 1 ] && m=${m/\(s\)/s} || m=${m/es$/}
+	m=${m/\(s\)/}
+	echo -n "$m"
+}
+
+summary()
 {
 	echo -n "At '$prop[head]'"
 	for key in $keys; do
 		[[ ! $flag[$key] =~ s ]] && continue
-		m=$msg[$key]
-		if [[ $m =~ '@v' ]]; then
-			m=${m/@v/$prop[$key]}
-		else
-			m="$prop[$key] $m"
-		fi
 		p="$prop[$key]"
 		[ -z "$p" -o "$p" = 0 -o -z $m ] && continue
-		[[ $p =~ '^[0-9]+$' ]] && [ $p -gt 1 ] && m=${m/\(s\)/s}
-		m=${m/\(s\)/}
-		echo -n ", $m"
+		echo -n ", "
+		prop-print $key
 	done
 	echo
 }
 
-report-long()
+report()
 {
 	for key in $keys; do
 		m=${msg[$key]/\(s\)/s}
 		m=${m/ \@v/}
+		m=${m/ \'\@v\'/}
 		m=${m//_/ }
 		[ -z $msg[$key] ] && continue
 		echo "$m: $prop[$key]"
 	done
-	git status --untracked-files=no HEAD
+	git status --untracked-files=no
 	echo
 }
 
@@ -115,31 +137,36 @@ git-general()
 	# prl - long only property, prs - long and short
 	git_dir=$(git rev-parse --git-dir)
 	prl root '%1 @v' 'rev-parse --show-toplevel'
-	prl head '%1' 'describe --all --contains --always'
+	prl head "%1 '@v'" 'describe --all --contains --always'
+	acti head r 'print report' report
 	prl branch '' 'rev-parse --abbrev-ref HEAD'
-	prl remote '%1' "config --get branch.$prop[branch].remote"
 
 	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
-	act unmerged m "Run merge tool" mergetool
+	actg unmerged g "Run merge tool" mergetool
 
-	prs changed '%1 file(s)' 'diff --name-only | wc -l'
-	act changed u "Selectively Update stage with changes" 'add --patch'
-	act changed s "Stash all changes" 'stash push'
+	prs modified '%1 file(s)' 'diff --name-only | wc -l'
+	actg modified m "show" 'diff'
+	actg modified u "update stage with modifications" 'add --patch'
+	actg modified s "stash" 'stash push --patch'
+	actg modified d "discard" 'checkout --patch'
 
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
-	act untracked a "Add and stage" 'add --interactive'
-	act untracked l "Cleanup" 'clean --interactive -d'
+	actg untracked L "list" 'status --untracked-files=normal'
+	actg untracked a "add and stage" 'add --interactive'
+	actg untracked C "cleanup" 'clean --interactive -d'
+	actg untracked i "ignore" 'ls-files  --others --directory --exclude-standard --exclude .gitignore >> .gitignore'
 	# TODO: add to .gitignore
 
 	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
-	act staged c "Commit staged" commit
-	act staged r "Unstage (reset) changes" 'reset --patch'
+	actg staged S "show" 'diff --staged'
+	actg staged c "commit" commit
+	actg staged R "unstage (reset) modifications" 'reset --patch'
 
 	prs stashes '%1' 'stash list | wc -l'
 	prl commited '%1' 'log -1 --format="%ar"'
 
-	prs in_progress '%1' 'merge HEAD > /dev/null && git status -uno HEAD | {! grep -q "in progress"}; echo $?'
-	act in_progress t "Check status" 'status --untracked-files=no HEAD' # without modifered
+	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $?'
+	actg in_progress t "Check status" 'status --untracked-files=no HEAD' # without modifered
 	# TODO:
 	# git status -uno HEAD | grep 'rebase in progress'
 	# all conflicts fixed: run "git rebase --continue"
@@ -147,6 +174,7 @@ git-general()
 	# git rebase --edit-todo
 	# git rebase --continue
 
+	prl remote '%1' "config --get branch.$prop[branch].remote"
 	if [[ $prop[remote] ]]; then
 		local h=$git_dir/FETCH_HEAD
 		test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
@@ -155,9 +183,9 @@ git-general()
 			git fetch --all
 		fi
 		prs ahead '%1' 'rev-list --count @{u}..HEAD'
-		act ahead p "Push to remote" push
+		actg ahead p "Push to remote" push
 		prl behind '%1' 'rev-list --count HEAD..@{u}'
-		act behind l "pull from remote" 'pull --autostash'
+		actg behind l "pull from remote" 'pull --autostash'
 	fi
 }
 
@@ -173,7 +201,7 @@ gitw-start()
 			until [ $? -eq 1 ] ; do
 				reset
 				git-general
-				report-short
+				#summary
 				perform-actions
 			done
 			;;
