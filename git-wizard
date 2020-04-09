@@ -164,6 +164,9 @@ git-general()
 	git_dir=$(git rev-parse --git-dir)
 	rep root '%1 @v' 'rev-parse --show-toplevel'
 
+	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
+	actg unmerged g "Run merge tool" mergetool
+
 	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $((? != 0))'
 	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
 	# TODO:
@@ -173,8 +176,10 @@ git-general()
 	# git rebase --edit-todo
 	# git rebase --continue
 
-	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
-	actg unmerged g "Run merge tool" mergetool
+	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
+	actg staged ' ' "show" 'diff --staged'
+	actg staged c "commit" commit
+	actg staged R "unstage (reset) modifications" 'reset --patch'
 
 	prs modified '%1 file(s)' 'diff --name-only | wc -l'
 	actg modified ' ' "show" 'diff'
@@ -185,18 +190,6 @@ git-general()
 	rep head "%1 '@v'" 'describe --all --contains --always'
 	acti head ' ' 'print report' report
 	rep branch '' 'rev-parse --abbrev-ref HEAD'
-
-	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
-	actg untracked ' ' "list" 'status --untracked-files=normal'
-	actg untracked a "add and stage" 'add --interactive'
-	actg untracked C "cleanup" 'clean --interactive -d'
-	actg untracked i "ignore" 'ls-files  --others --directory --exclude-standard --exclude .gitignore >> .gitignore'
-	# TODO: add to .gitignore
-
-	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
-	actg staged ' ' "show" 'diff --staged'
-	actg staged c "commit" commit
-	actg staged R "unstage (reset) modifications" 'reset --patch'
 
 	prs stashes '%1' 'stash list | wc -l'
 	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
@@ -216,6 +209,12 @@ git-general()
 		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
 		actg remote_commits l "pull from remote" 'pull --autostash'
 	fi
+
+	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
+	actg untracked ' ' "list" 'status --untracked-files=normal'
+	actg untracked a "add and stage" 'add --interactive'
+	actg untracked C "cleanup" 'clean --interactive -d'
+	actg untracked i "ignore" 'ls-files --others --directory --exclude-standard --exclude .gitignore >> .gitignore'
 }
 
 gitw-start()
