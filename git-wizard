@@ -158,6 +158,21 @@ report()
 	echo
 }
 
+in_progress()
+{
+	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
+	actg unmerged g "Run merge tool" mergetool
+
+	prop s in_progress '%1' "$(git status --untracked-files=no HEAD | grep -q -e "You are" -e "in progress" && echo "an operation")"
+	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
+	actg in_progress c "Continue rebase" 'rebase --continue'
+	# TODO:
+	# git status -uno HEAD | grep 'rebase in progress'
+	# git commit --amend
+	# git rebase --edit-todo
+
+}
+
 remote()
 {
 	rep remote '%1' "config --get branch.$prop[branch].remote"
@@ -181,17 +196,7 @@ git-general()
 	git_dir=$(git rev-parse --git-dir)
 	rep root '%1 @v' 'rev-parse --show-toplevel'
 
-	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
-	actg unmerged g "Run merge tool" mergetool
-
-	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $((? != 0))'
-	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
-	# TODO:
-	# git status -uno HEAD | grep 'rebase in progress'
-	# all conflicts fixed: run "git rebase --continue"
-	# git commit --amend
-	# git rebase --edit-todo
-	# git rebase --continue
+	in_progress
 
 	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
 	actg staged ' ' "show" 'diff --staged'
