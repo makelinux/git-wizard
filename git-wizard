@@ -125,6 +125,7 @@ prop-print()
 		m=${m/\(s\)/s}
 	else
 		m=${m/es-EOL/}
+		m=${m/commits-EOL/commit}
 	fi
 	m=${m/-EOL/}
 	m=${m/\(s\)/}
@@ -184,8 +185,10 @@ remote()
 			git fetch --all
 		fi
 		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
+		actg local_commits ' ' "list" "log ..@{u}"
 		actg local_commits p "Push to remote" push
 		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
+		actg remote_commits ' ' "list" 'log --stat HEAD..@{u}'
 		actg remote_commits l "pull from remote" 'pull --autostash'
 	fi
 }
