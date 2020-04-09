@@ -210,10 +210,10 @@ git-general()
 		if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
 			git fetch --all
 		fi
-		prs ahead '%1' 'rev-list --count @{u}..HEAD'
-		actg ahead p "Push to remote" push
-		rep behind '%1' 'rev-list --count HEAD..@{u}'
-		actg behind l "pull from remote" 'pull --autostash'
+		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
+		actg local_commits p "Push to remote" push
+		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
+		actg remote_commits l "pull from remote" 'pull --autostash'
 	fi
 }
 
