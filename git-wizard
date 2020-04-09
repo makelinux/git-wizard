@@ -81,12 +81,15 @@ perform-actions()
 			actk[$actkey[$n]]=$act[$n]
 			echo " [$actkey[$n]] - $conf[$n]"
 		}
+		echo " [Enter] - continue"
+		echo " * - exit"
+		read -r -k "?>"
+		[ "$REPLY" = $'\n' ] && continue
+		echo
+		[ -z "$actk[$REPLY]" ] && return 1
+		eval $actk[$REPLY]
+		break
 	}
-	echo " * - exit"
-	read -r -k "?>"
-	echo
-	[ -z "$actk[$REPLY]" ] && return 1
-	eval $actk[$REPLY]
 	echo
 }
 
@@ -144,18 +147,18 @@ git-general()
 	# rep - property for report only, prs - long and short
 	git_dir=$(git rev-parse --git-dir)
 	rep root '%1 @v' 'rev-parse --show-toplevel'
-	rep head "%1 '@v'" 'describe --all --contains --always'
-	acti head r 'print report' report
-	rep branch '' 'rev-parse --abbrev-ref HEAD'
-
 	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
 	actg unmerged g "Run merge tool" mergetool
 
 	prs modified '%1 file(s)' 'diff --name-only | wc -l'
 	actg modified m "show" 'diff'
 	actg modified u "update stage with modifications" 'add --patch'
-	actg modified s "stash" 'stash push --patch'
+	actg modified s "push into stash" 'stash push --patch'
 	actg modified d "discard" 'checkout --patch'
+
+	rep head "%1 '@v'" 'describe --all --contains --always'
+	acti head r 'print report' report
+	rep branch '' 'rev-parse --abbrev-ref HEAD'
 
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
 	actg untracked L "list" 'status --untracked-files=normal'
@@ -170,10 +173,12 @@ git-general()
 	actg staged R "unstage (reset) modifications" 'reset --patch'
 
 	prs stashes '%1' 'stash list | wc -l'
+	actg stashes T "show and list stash" 'stash show; git stash list'
+	actg stashes o "pop from stash" 'stash pop'
 	rep commited '%1' 'log -1 --format="%ar"'
 
-	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $?'
-	actg in_progress t "Check status" 'status --untracked-files=no HEAD' # without modifered
+	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $((? != 0))'
+	actg in_progress t "Check head status" 'status --untracked-files=no HEAD' # without modifered
 	# TODO:
 	# git status -uno HEAD | grep 'rebase in progress'
 	# all conflicts fixed: run "git rebase --continue"
