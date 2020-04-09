@@ -163,6 +163,16 @@ git-general()
 	# rep - property for report only, prs - long and short
 	git_dir=$(git rev-parse --git-dir)
 	rep root '%1 @v' 'rev-parse --show-toplevel'
+
+	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $((? != 0))'
+	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
+	# TODO:
+	# git status -uno HEAD | grep 'rebase in progress'
+	# all conflicts fixed: run "git rebase --continue"
+	# git commit --amend
+	# git rebase --edit-todo
+	# git rebase --continue
+
 	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
 	actg unmerged g "Run merge tool" mergetool
 
@@ -192,15 +202,6 @@ git-general()
 	actg stashes T "show and list stash" 'stash show; git stash list'
 	actg stashes o "pop from stash" 'stash pop'
 	rep commited '%1' 'log -1 --format="%ar"'
-
-	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $((? != 0))'
-	actg in_progress t "Check head status" 'status --untracked-files=no HEAD' # without modifered
-	# TODO:
-	# git status -uno HEAD | grep 'rebase in progress'
-	# all conflicts fixed: run "git rebase --continue"
-	# git commit --amend
-	# git rebase --edit-todo
-	# git rebase --continue
 
 	rep remote '%1' "config --get branch.$prop[branch].remote"
 	if [[ $prop[remote] ]]; then
