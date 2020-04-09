@@ -58,7 +58,7 @@ prs() { prop_git "s" "$1" "$2" "$3" }
 acti()
 {
 	actprop+=($1)
-	[[ "${actkey[(ie)$2]}" -le "${#actkey}" ]] && echo "duplicated key $2"
+	#[[ "${actkey[(ie)$2]}" -le "${#actkey}" ]] && echo "duplicated key $2"
 	actkey+=("$2")
 	conf+=("$3")
 	flag[$1]+=a
@@ -177,29 +177,29 @@ git-general()
 	actg unmerged g "Run merge tool" mergetool
 
 	prs modified '%1 file(s)' 'diff --name-only | wc -l'
-	actg modified m "show" 'diff'
+	actg modified ' ' "show" 'diff'
 	actg modified u "update stage with modifications" 'add --patch'
 	actg modified s "push into stash" 'stash push --patch'
 	actg modified d "discard" 'checkout --patch'
 
 	rep head "%1 '@v'" 'describe --all --contains --always'
-	acti head r 'print report' report
+	acti head ' ' 'print report' report
 	rep branch '' 'rev-parse --abbrev-ref HEAD'
 
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
-	actg untracked L "list" 'status --untracked-files=normal'
+	actg untracked ' ' "list" 'status --untracked-files=normal'
 	actg untracked a "add and stage" 'add --interactive'
 	actg untracked C "cleanup" 'clean --interactive -d'
 	actg untracked i "ignore" 'ls-files  --others --directory --exclude-standard --exclude .gitignore >> .gitignore'
 	# TODO: add to .gitignore
 
 	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
-	actg staged S "show" 'diff --staged'
+	actg staged ' ' "show" 'diff --staged'
 	actg staged c "commit" commit
 	actg staged R "unstage (reset) modifications" 'reset --patch'
 
 	prs stashes '%1' 'stash list | wc -l'
-	actg stashes T "show and list stash" 'stash show; git stash list'
+	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
 	actg stashes o "pop from stash" 'stash pop'
 	rep commited '%1' 'log -1 --format="%ar"'
 
