@@ -155,7 +155,6 @@ report()
 		[ -z $msg[$key] ] && continue
 		echo "$m: $prop[$key]"
 	done
-	git status --untracked-files=no
 	echo
 }
 
@@ -214,6 +213,8 @@ git-general()
 
 	rep head "%1 '@v'" 'describe --all --contains --always'
 	acti head ' ' 'print report' report
+	actg head c 'show the last commit' 'show --stat'
+	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
 	rep branch '' 'rev-parse --abbrev-ref HEAD'
 
 	prs stashes '%1' 'stash list | wc -l'
