@@ -6,8 +6,12 @@
 declare -A prop flag msg
 declare -a keys actprop actkey conf act
 
+echo | espeak 2> /dev/null
+quiet=$?
+
 while [ "$1" ]; do
 	case $1 in
+		'--quiet') quiet=1 ;;
 		*) echo error: unknown argument $1;;
 	esac
 	shift
@@ -69,6 +73,12 @@ actg()
 	acti $1 $2 $3 "git $4"
 }
 
+out()
+{
+	echo "$1 \e[1m$2\e[0m"
+	[ $quiet != 0 ] && return
+	espeak "$2" 2> /dev/null &
+}
 
 # Ask user which available actions to perform
 perform-actions()
@@ -80,7 +90,7 @@ perform-actions()
 		[[ ! $flag[$key] =~ a ]] && continue
 		[[ -z "$v" || "$v" == 0 ]] && continue
 
-		print "What to do with $(prop-print $key) ?"
+		out "What to do with" "$(prop-print $key)?"
 
 		for n ({1..${#actprop}}) {
 			[[ $actprop[$n] != $key ]] && continue
@@ -124,15 +134,14 @@ prop-print()
 
 summary()
 {
-	echo -n "At '$prop[head]'"
+	local m="At head '$prop[head]'"
 	for key in $keys; do
 		[[ ! $flag[$key] =~ s ]] && continue
 		p="$prop[$key]"
-		[ -z "$p" -o "$p" = 0 -o -z $m ] && continue
-		echo -n ", "
-		prop-print $key
+		[ -z "$p" -o "$p" = 0 ] && continue
+		m+=", $(prop-print $key)"
 	done
-	echo
+	out $m
 }
 
 report()
@@ -232,7 +241,7 @@ rep root '%1 @v' 'rev-parse --show-toplevel'
 if [ $(git rev-parse --show-toplevel) ]; then
 	gitw-start "$@"
 else
-	echo "Not a git repository"
+	out "Here is no a git repository"
 	read -r -k "?Create empty? (y/n)"
 	echo
 	[[ $REPLY =~ ^[Yy]$ ]] && git init .
