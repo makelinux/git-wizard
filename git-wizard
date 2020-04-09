@@ -6,6 +6,13 @@
 declare -A prop flag msg
 declare -a keys actprop actkey conf act
 
+while [ "$1" ]; do
+	case $1 in
+		*) echo error: unknown argument $1;;
+	esac
+	shift
+done
+
 reset()
 {
 	prop=()
