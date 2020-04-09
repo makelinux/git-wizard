@@ -100,8 +100,15 @@ prop-print()
 		m="$prop[$key] $m"
 	fi
 	p="$prop[$key]"
-	[[ $p =~ '^[0-9]+$' ]] && [ $p -gt 1 ] && m=${m/\(s\)/s} || m=${m/es$/}
+	m=$m-EOL
+	if [[ $p =~ '^[0-9]+$' ]] && [ $p -gt 1 ]; then
+		m=${m/\(s\)/s}
+	else
+		m=${m/es-EOL/}
+	fi
+	m=${m/-EOL/}
 	m=${m/\(s\)/}
+	m=${m/_/ }
 	echo -n "$m"
 }
 
