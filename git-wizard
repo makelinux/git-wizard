@@ -158,6 +158,23 @@ report()
 	echo
 }
 
+remote()
+{
+	rep remote '%1' "config --get branch.$prop[branch].remote"
+	if [[ $prop[remote] ]]; then
+		local h=$git_dir/FETCH_HEAD
+		test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
+		#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
+		if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
+			git fetch --all
+		fi
+		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
+		actg local_commits p "Push to remote" push
+		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
+		actg remote_commits l "pull from remote" 'pull --autostash'
+	fi
+}
+
 git-general()
 {
 	# rep - property for report only, prs - long and short
@@ -196,19 +213,7 @@ git-general()
 	actg stashes o "pop from stash" 'stash pop'
 	rep commited '%1' 'log -1 --format="%ar"'
 
-	rep remote '%1' "config --get branch.$prop[branch].remote"
-	if [[ $prop[remote] ]]; then
-		local h=$git_dir/FETCH_HEAD
-		test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
-		#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
-		if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
-			git fetch --all
-		fi
-		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
-		actg local_commits p "Push to remote" push
-		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
-		actg remote_commits l "pull from remote" 'pull --autostash'
-	fi
+	remote
 
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
 	actg untracked ' ' "list" 'status --untracked-files=normal'
