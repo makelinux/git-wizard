@@ -215,7 +215,10 @@ git-general()
 	acti head ' ' 'print report' report
 	actg head c 'show the last commit' 'show --stat'
 	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
+
 	rep branch '' 'rev-parse --abbrev-ref HEAD'
+	rep local_branches '%1' 'branch | wc -l'
+	rep remote_branches '%1' 'branch --remote | wc -l'
 
 	prs stashes '%1' 'stash list | wc -l'
 	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
