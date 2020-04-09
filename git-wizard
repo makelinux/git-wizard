@@ -33,10 +33,10 @@ prop()
 # functions for reading git property
 prop_git() { prop "$1" "$2" "$3" "$(zsh -c "git $4" 2>/dev/null)" }
 
-# prl - long only property
-prl() { prop_git "l" "$1" "$2" "$3" }
+# rep - property for report only
+rep() { prop_git "l" "$1" "$2" "$3" }
 
-# prs - long and short
+# prs - property for summary and report
 prs() { prop_git "s" "$1" "$2" "$3" }
 
 # function for
@@ -134,12 +134,12 @@ report()
 
 git-general()
 {
-	# prl - long only property, prs - long and short
+	# rep - property for report only, prs - long and short
 	git_dir=$(git rev-parse --git-dir)
-	prl root '%1 @v' 'rev-parse --show-toplevel'
-	prl head "%1 '@v'" 'describe --all --contains --always'
+	rep root '%1 @v' 'rev-parse --show-toplevel'
+	rep head "%1 '@v'" 'describe --all --contains --always'
 	acti head r 'print report' report
-	prl branch '' 'rev-parse --abbrev-ref HEAD'
+	rep branch '' 'rev-parse --abbrev-ref HEAD'
 
 	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
 	actg unmerged g "Run merge tool" mergetool
@@ -163,7 +163,7 @@ git-general()
 	actg staged R "unstage (reset) modifications" 'reset --patch'
 
 	prs stashes '%1' 'stash list | wc -l'
-	prl commited '%1' 'log -1 --format="%ar"'
+	rep commited '%1' 'log -1 --format="%ar"'
 
 	prs in_progress '%1' 'merge HEAD > /dev/null && git status --ignored=no HEAD | {! grep -q "in progress"}; echo $?'
 	actg in_progress t "Check status" 'status --untracked-files=no HEAD' # without modifered
@@ -174,7 +174,7 @@ git-general()
 	# git rebase --edit-todo
 	# git rebase --continue
 
-	prl remote '%1' "config --get branch.$prop[branch].remote"
+	rep remote '%1' "config --get branch.$prop[branch].remote"
 	if [[ $prop[remote] ]]; then
 		local h=$git_dir/FETCH_HEAD
 		test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
@@ -184,7 +184,7 @@ git-general()
 		fi
 		prs ahead '%1' 'rev-list --count @{u}..HEAD'
 		actg ahead p "Push to remote" push
-		prl behind '%1' 'rev-list --count HEAD..@{u}'
+		rep behind '%1' 'rev-list --count HEAD..@{u}'
 		actg behind l "pull from remote" 'pull --autostash'
 	fi
 }
@@ -208,7 +208,7 @@ gitw-start()
 	esac
 }
 
-prl root '%1 @v' 'rev-parse --show-toplevel'
+rep root '%1 @v' 'rev-parse --show-toplevel'
 
 if [ $(git rev-parse --show-toplevel) ]; then
 	gitw-start "$@"
