@@ -173,6 +173,21 @@ in_progress()
 
 }
 
+modified()
+{
+	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
+	actg staged ' ' "show" 'diff --staged'
+	actg staged c "commit" commit
+	actg staged R "unstage (reset) modifications" 'reset --patch'
+
+	prs modified '%1 file(s)' 'diff --name-only | wc -l'
+	actg modified 't' "stat" 'diff --stat'
+	actg modified ' ' "show" 'diff'
+	actg modified u "update stage with modifications" 'add --patch'
+	actg modified s "push into stash" 'stash push --patch'
+	actg modified d "discard" 'checkout --patch'
+}
+
 remote()
 {
 	rep remote '%1' "config --get branch.$prop[branch].remote"
@@ -199,18 +214,7 @@ git-general()
 	rep root '%1 @v' 'rev-parse --show-toplevel'
 
 	in_progress
-
-	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
-	actg staged ' ' "show" 'diff --staged'
-	actg staged c "commit" commit
-	actg staged R "unstage (reset) modifications" 'reset --patch'
-
-	prs modified '%1 file(s)' 'diff --name-only | wc -l'
-	actg modified 't' "stat" 'diff --stat'
-	actg modified ' ' "show" 'diff'
-	actg modified u "update stage with modifications" 'add --patch'
-	actg modified s "push into stash" 'stash push --patch'
-	actg modified d "discard" 'checkout --patch'
+	modified
 
 	rep head "%1 '@v'" 'describe --all --contains --always'
 	acti head ' ' 'print report' report
