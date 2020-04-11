@@ -224,6 +224,17 @@ remote()
 	fi
 }
 
+untracked()
+{
+	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
+	actg untracked ' ' "list" 'status --untracked-files=normal'
+	actg untracked a "add and stage" 'add --interactive'
+	actg untracked C "cleanup" 'clean --interactive -d'
+	actg untracked i "ignore" \
+		'ls-files --others --directory --exclude-standard --exclude .gitignore \
+		>> .gitignore'
+}
+
 git-general()
 {
 	# rep - property for report only, prs - long and short
@@ -234,12 +245,7 @@ git-general()
 	modified
 	head-branch
 	remote
-
-	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
-	actg untracked ' ' "list" 'status --untracked-files=normal'
-	actg untracked a "add and stage" 'add --interactive'
-	actg untracked C "cleanup" 'clean --interactive -d'
-	actg untracked i "ignore" 'ls-files --others --directory --exclude-standard --exclude .gitignore >> .gitignore'
+	untracked
 }
 
 gitw-start()
