@@ -188,6 +188,23 @@ modified()
 	actg modified d "discard" 'checkout --patch'
 }
 
+head-branch()
+{
+	rep head "%1 '@v'" 'describe --all --contains --always'
+	acti head ' ' 'print report' report
+	actg head c 'show the last commit' 'show --stat'
+	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
+
+	rep branch '' 'rev-parse --abbrev-ref HEAD'
+	rep local_branches '%1' 'branch | wc -l'
+	rep remote_branches '%1' 'branch --remote | wc -l'
+
+	prs stashes '%1' 'stash list | wc -l'
+	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
+	actg stashes o "pop from stash" 'stash pop'
+	rep commited '%1' 'log -1 --format="%ar"'
+}
+
 remote()
 {
 	rep remote '%1' "config --get branch.$prop[branch].remote"
@@ -215,21 +232,7 @@ git-general()
 
 	in_progress
 	modified
-
-	rep head "%1 '@v'" 'describe --all --contains --always'
-	acti head ' ' 'print report' report
-	actg head c 'show the last commit' 'show --stat'
-	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
-
-	rep branch '' 'rev-parse --abbrev-ref HEAD'
-	rep local_branches '%1' 'branch | wc -l'
-	rep remote_branches '%1' 'branch --remote | wc -l'
-
-	prs stashes '%1' 'stash list | wc -l'
-	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
-	actg stashes o "pop from stash" 'stash pop'
-	rep commited '%1' 'log -1 --format="%ar"'
-
+	head-branch
 	remote
 
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
