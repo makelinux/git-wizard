@@ -135,14 +135,14 @@ prop-print()
 
 summary()
 {
-	local m="At head '$prop[head]'"
+	local m="Summary: head '$prop[head]'"
 	for key in $keys; do
 		[[ ! $flag[$key] =~ s ]] && continue
 		p="$prop[$key]"
 		[ -z "$p" -o "$p" = 0 ] && continue
 		m+=", $(prop-print $key)"
 	done
-	out $m
+	out "" $m
 }
 
 report()
@@ -267,9 +267,7 @@ gitw-start()
 	esac
 }
 
-rep root '%1 @v' 'rev-parse --show-toplevel'
-
-if [ $(git rev-parse --show-toplevel) ]; then
+if [ $(git rev-parse --show-toplevel 2> /dev/null) ]; then
 	gitw-start "$@"
 else
 	out "" "Here is no a git repository"
@@ -284,6 +282,5 @@ else
 	read -r -k "?Create empty? (y/n)"
 	echo
 	[[ $REPLY =~ ^[Yy]$ ]] && git init .
-	#exit 1
 fi
 exit
