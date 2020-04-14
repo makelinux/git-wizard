@@ -272,7 +272,15 @@ rep root '%1 @v' 'rev-parse --show-toplevel'
 if [ $(git rev-parse --show-toplevel) ]; then
 	gitw-start "$@"
 else
-	out "Here is no a git repository"
+	out "" "Here is no a git repository"
+	for c in $(xsel) $(xsel --clipboard); do
+		if _=$(expr match "$c" ".*:.*/.*git.*"); then
+			echo "Clipboard content looks like git url: $c"
+			read -r -k "?Clone? (y/n)"
+			echo
+			[[ $REPLY =~ ^[Yy]$ ]] && git clone $c
+		fi
+	done
 	read -r -k "?Create empty? (y/n)"
 	echo
 	[[ $REPLY =~ ^[Yy]$ ]] && git init .
