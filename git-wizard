@@ -173,6 +173,16 @@ in_progress()
 
 }
 
+diff_to_quickfix()
+{
+	local file=
+	while read a;do
+		[[ "$a" =~ "^\+\+\+ (.*)" ]] && file=$match
+		[[ "$a" =~ "^@@.*\+([0-9]+)" ]] && echo "$file:$match:$a"
+	done
+	#perl -ne '/^\+\+\+ (.+)/ && { $f="$1"};/@@.*\+(\d+)/ &&print "$f:$1:$_\n"'
+}
+
 modified()
 {
 	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
@@ -186,6 +196,7 @@ modified()
 	actg modified u "update stage with modifications" 'add --patch'
 	actg modified s "push into stash" 'stash push --patch'
 	actg modified d "discard" 'checkout --patch'
+	acti modified 'e' edit "vim -q <(git diff -U0 --no-prefix | diff_to_quickfix)"
 }
 
 head-branch()
