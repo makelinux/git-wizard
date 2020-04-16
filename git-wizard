@@ -235,6 +235,13 @@ remote()
 	fi
 }
 
+action_itemes()
+{
+	rep action_itemes '%1' 'grep --max-depth=3 -w -eTODO -eFIXME | wc -l'
+	actg action_itemes ' ' list 'grep -w -n -eTODO -eFIXME'
+	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
+}
+
 untracked()
 {
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
@@ -256,6 +263,7 @@ git-general()
 	modified
 	head-branch
 	remote
+	action_itemes
 	untracked
 }
 
