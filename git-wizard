@@ -281,6 +281,10 @@ gitw-start()
 while [ "$1" ]; do
 	case $1 in
 		'--quiet') quiet=1 ;;
+		'report')
+			git-general
+			report
+			exit;;
 		*) echo error: unknown argument $1;;
 	esac
 	shift
