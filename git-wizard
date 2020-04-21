@@ -196,7 +196,7 @@ modified()
 	actg modified u "update stage with modifications" 'add --patch'
 	actg modified s "push into stash" 'stash push --patch'
 	actg modified d "discard" 'checkout --patch'
-	acti modified 'e' edit "vim -q <(git diff -U0 --no-prefix | diff_to_quickfix)"
+	acti modified 'e' "edit with vim quickfix" "vim -q <(git diff -U0 --relative --no-prefix | diff_to_quickfix)"
 }
 
 head-branch()
