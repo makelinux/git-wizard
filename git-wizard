@@ -9,14 +9,6 @@ declare -a keys actprop actkey conf act
 echo | espeak 2> /dev/null
 quiet=$?
 
-while [ "$1" ]; do
-	case $1 in
-		'--quiet') quiet=1 ;;
-		*) echo error: unknown argument $1;;
-	esac
-	shift
-done
-
 reset()
 {
 	prop=()
@@ -285,6 +277,14 @@ gitw-start()
 			;;
 	esac
 }
+
+while [ "$1" ]; do
+	case $1 in
+		'--quiet') quiet=1 ;;
+		*) echo error: unknown argument $1;;
+	esac
+	shift
+done
 
 if [ $(git rev-parse --show-toplevel 2> /dev/null) ]; then
 	gitw-start "$@"
