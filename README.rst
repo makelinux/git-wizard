@@ -19,6 +19,12 @@ to run mergetool.
 Features
 ****
 
+Each iteration the wizard checks whether the repository contains collisions,
+operations in progress, changes, stashes, ahead/behind commits, untracked files.
+Periodically automatically it performs fetch.
+Some valuable short messages the wizard tells you audiable via application
+espeak.
+
 The wizard uses following commands:
 
 * init
@@ -35,11 +41,6 @@ The wizard uses following commands:
 * log
 * clean
 
-Each iteration it checks whether the repository contains collisions,
-operations in progress, changes, stashes, ahead/behind, untracked files.
-Periodically automatically it performs fetch.
-Some valuable short messages the wizard tells you audiable via application
-espeak.
 
 Report
 ----
