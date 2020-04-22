@@ -1,5 +1,6 @@
 #!/bin/zsh
 
+
 # Git Wizard
 # Interactive front end git wrapper script
 
@@ -8,6 +9,16 @@ declare -a keys actprop actkey conf act
 
 echo | espeak 2> /dev/null
 quiet=$?
+
+while [[ "$1" =~ "^--" ]]; do
+	case $1 in
+		'--quiet') quiet=1; shift;;
+		*)
+			echo error: unknown argument $1
+			break
+			;;
+	esac
+done
 
 reset()
 {
@@ -78,6 +89,7 @@ perform-actions()
 	declare -a kk
 	declare -A actk
 	for key ($keys) {
+		let n+=1
 		v=$prop[$key]
 		[[ ! $flag[$key] =~ a ]] && continue
 		[[ -z "$v" || "$v" == 0 ]] && continue
@@ -92,13 +104,15 @@ perform-actions()
 		}
 		echo " [Enter] - continue"
 		echo " * - exit"
-		read -r -k "?>"
+		echo $probe[$key]
+		read -r -u 0 -k "?>"
 		[ "$REPLY" = $'\n' ] && continue
 		echo
 		[ -z "$actk[$REPLY]" ] && return 1
 		eval $actk[$REPLY]
 		break
 	}
+	[ $#actk -eq 0 ] && echo "Nothing to do" && exit
 	echo
 }
 
@@ -139,6 +153,7 @@ summary()
 
 report()
 {
+	summary
 	for key in $keys; do
 		m=${msg[$key]/\(s\)/s}
 		m=${m/ \@v/}
@@ -147,6 +162,8 @@ report()
 		[ -z $msg[$key] ] && continue
 		echo "$m: $prop[$key]"
 	done
+	wait
+	#git branch --all
 	echo
 }
 
@@ -232,6 +249,8 @@ action_itemes()
 	rep action_itemes '%1' 'grep --max-depth=3 -w -eTODO -eFIXME | wc -l'
 	actg action_itemes ' ' list 'grep -w -n -eTODO -eFIXME'
 	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
+
+	prs gone_branches '%1' "branch -vv | grep ': gone]' | wc -l"
 }
 
 untracked()
@@ -262,6 +281,10 @@ git-general()
 gitw-start()
 {
 	case $1 in
+		report)
+			git-general
+			report
+			exit;;
 		branches)
 			git for-each-ref --sort=authordate \
 				--format "%(committerdate:unix)	%(committerdate:relative)	%(align:left,25)%(refname:short)%(end) %(subject)" \
@@ -271,24 +294,12 @@ gitw-start()
 			until [ $? -eq 1 ] ; do
 				reset
 				git-general
-				#summary
+				# summary
 				perform-actions
 			done
 			;;
 	esac
 }
-
-while [ "$1" ]; do
-	case $1 in
-		'--quiet') quiet=1 ;;
-		'report')
-			git-general
-			report
-			exit;;
-		*) echo error: unknown argument $1;;
-	esac
-	shift
-done
 
 if [ $(git rev-parse --show-toplevel 2> /dev/null) ]; then
 	gitw-start "$@"
@@ -299,10 +310,10 @@ else
 			echo "Clipboard content looks like git url: $c"
 			read -r -k "?Clone? (y/n)"
 			echo
-			[[ $REPLY =~ ^[Yy]$ ]] && git clone $c
+			[[ $REPLY =~ ^[Yy]$ ]] && git clone "$c"
 		fi
 	done
-	read -r -k "?Create empty? (y/n)"
+	read -r -u 0 -k "?Create empty? (y/n)"
 	echo
 	[[ $REPLY =~ ^[Yy]$ ]] && git init .
 fi
