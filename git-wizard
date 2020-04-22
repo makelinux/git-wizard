@@ -312,6 +312,19 @@ gitw-start()
 	esac
 }
 
+[ "$1" = unit-tests ] &&
+{
+	local fails=0
+	d=$(mktemp -d)
+	pushd $d
+	git-wizard --action y || { echo Fail && false }
+	let fails+=$?
+	popd
+	rm -rf $d
+	echo Fails: $fails
+	exit $fails
+}
+
 if [ $(git rev-parse --show-toplevel 2> /dev/null) ]; then
 	gitw-start "$@"
 else
@@ -327,5 +340,6 @@ else
 	ask 'Create empty? (y/n)'
 	echo
 	[[ $REPLY =~ ^[Yy]$ ]] && git init .
+	test -d .git
 fi
 exit
