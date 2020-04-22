@@ -10,15 +10,23 @@ declare -a keys actprop actkey conf act
 echo | espeak 2> /dev/null
 quiet=$?
 
+action=
 while [[ "$1" =~ "^--" ]]; do
 	case $1 in
 		'--quiet') quiet=1; shift;;
+		'--action') action=$2; shift 2;;
 		*)
 			echo error: unknown argument $1
 			break
 			;;
 	esac
 done
+
+ask()
+{
+	test "$action" && REPLY=$action && return
+	read -r -k "?$1"
+}
 
 reset()
 {
@@ -80,6 +88,7 @@ out()
 {
 	echo "$1 \e[1m$2\e[0m"
 	[ $quiet != 0 ] && return
+	test "$action" && return
 	espeak "$2" 2> /dev/null &
 }
 
@@ -105,13 +114,15 @@ perform-actions()
 		echo " [Enter] - continue"
 		echo " * - exit"
 		echo $probe[$key]
-		read -r -u 0 -k "?>"
+		ask '>'
 		[ "$REPLY" = $'\n' ] && continue
 		echo
 		[ -z "$actk[$REPLY]" ] && return 1
 		eval $actk[$REPLY]
+		test "$action" && exit
 		break
 	}
+	test "$action" && exit
 	[ $#actk -eq 0 ] && echo "Nothing to do" && exit
 	echo
 }
@@ -308,12 +319,12 @@ else
 	for c in $(xsel) $(xsel --clipboard); do
 		if _=$(expr match "$c" ".*:.*/.*git.*"); then
 			echo "Clipboard content looks like git url: $c"
-			read -r -k "?Clone? (y/n)"
+			ask 'Clone? (y/n)'
 			echo
 			[[ $REPLY =~ ^[Yy]$ ]] && git clone "$c"
 		fi
 	done
-	read -r -u 0 -k "?Create empty? (y/n)"
+	ask 'Create empty? (y/n)'
 	echo
 	[[ $REPLY =~ ^[Yy]$ ]] && git init .
 fi
