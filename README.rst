@@ -40,6 +40,7 @@ The wizard uses following commands:
 * stash
 * log
 * clean
+* gui and gitk
 
 
 Report

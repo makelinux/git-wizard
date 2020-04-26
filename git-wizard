@@ -217,6 +217,7 @@ modified()
 	actg modified s "push into stash" 'stash push --patch'
 	actg modified d "discard" 'checkout --patch'
 	acti modified 'e' "edit with vim quickfix" "vim -q <(git diff -U0 --relative --no-prefix | diff_to_quickfix)"
+	actg modified 'g' "gui" "gui"
 }
 
 head-branch()
@@ -226,6 +227,8 @@ head-branch()
 	actg head c 'show the last commit' 'show --stat'
 	actg head l 'list recent log' 'log --pretty="format:%ar: %ae: %h %s" --reverse -n $((LINES-2))'
 	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
+	acti head k "explore with gitk" "gitk"
+	actg head a "amend the last commit" "commit --amend"
 
 	rep branch '' 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
