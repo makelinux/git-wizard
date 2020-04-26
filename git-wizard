@@ -228,7 +228,10 @@ head-branch()
 
 	rep branch '' 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
+	branches_format='%(committerdate:short) - %(align:left,25)%(committerdate:relative)%(end) %(align:left,25)%(objectname:short) %(refname:short)%(end) %(subject)'
+	actg local_branches ' ' 'list' "for-each-ref --sort=committerdate --format '$branches_format' refs/heads"
 	rep remote_branches '%1' 'branch --remote | wc -l'
+	actg remote_branches ' ' 'list recent' "branch --remotes --sort=committerdate --format '$branches_format' | tail -n $((LINES-2))"
 
 	prs stashes '%1' 'stash list | wc -l'
 	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
@@ -262,6 +265,7 @@ action_itemes()
 	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
 
 	prs gone_branches '%1' "branch -vv | grep ': gone]' | wc -l"
+	actg gone_branches 'D' "delete gone branches" 'branch -d $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
 }
 
 untracked()
@@ -296,11 +300,7 @@ gitw-start()
 			git-general
 			report
 			exit;;
-		branches)
-			git for-each-ref --sort=authordate \
-				--format "%(committerdate:unix)	%(committerdate:relative)	%(align:left,25)%(refname:short)%(end) %(subject)" \
-				refs/heads | sort | cut -f2- ;;
-		*)
+		'')
 			true
 			until [ $? -eq 1 ] ; do
 				reset

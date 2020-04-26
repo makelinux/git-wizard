@@ -69,10 +69,10 @@ untracked files: 3
 
 Other features
 ----
+* Cleans up 'gone' branches and helps to keep your workspace tidy.
 
 To do
 ****
 
 * Analize details of 'in progress' status.
-* Cleanup 'gone' branches.
 * **You are welcome to request new features and add git tricks**
