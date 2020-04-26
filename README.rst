@@ -8,7 +8,7 @@ git-wizard scans status for your repository and suggests to perform suitable
 operations.
 Beginners can enjoy interactively learn git functionality.
 Experienced command line git users can save they time by using the wizard
-to preform recurrent operations.
+to preform frequent operations.
 
 For example when you have a merge conflict the wizard first of all suggests
 to run mergetool.
@@ -48,25 +48,24 @@ Report
 
 Just reports current status of the repostory:
 
-git-wizard report
+git-wizard report::
 
-root: /home/costa/Dropbox/linux/git-wizard
-unmerged files: 0
-in progress:
-staged files: 0
-modified files: 2
-head: master
-local branches: 2
-remote branches: 3
-stashes: 2
-commited: 2 minutes ago
-remote: origin
-fetch age (min): 6
-local commits: 3
-remote commits: 0
-action itemes: 1
-gone branches: 0
-untracked files: 3
+  root: /home/costa/Dropbox/linux/git-wizard
+  unmerged files: 0
+  in progress:
+  modified files: 2
+  head: master
+  local branches: 2
+  remote branches: 3
+  stashes: 2
+  commited: 2 minutes ago
+  remote: origin
+  fetch age (min): 6
+  local commits: 3
+  remote commits: 0
+  action itemes: 1
+  gone branches: 0
+  untracked files: 3
 
 Other features
 ----
