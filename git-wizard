@@ -313,6 +313,7 @@ gitw-start()
 				perform-actions
 			done
 			;;
+		*)	echo Unknown command $1. ;;
 	esac
 }
 
@@ -346,4 +347,4 @@ else
 	[[ $REPLY =~ ^[Yy]$ ]] && git init .
 	test -d .git
 fi
-exit
+exit $?

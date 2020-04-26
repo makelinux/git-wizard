@@ -1,8 +1,8 @@
-git-wizard - interactive talking front end git wrapper script
+git-wizard - instant git magic and tricks
 =====
 
 Wizard's vision: collect git tricks, troubleshooting techniques and git wisdom
-under one hat.
+under one hat and perform them interactively in dialogue.
 
 git-wizard scans status for your repository and suggests to perform suitable
 operations.
@@ -25,7 +25,7 @@ Periodically automatically it performs fetch.
 Some valuable short messages the wizard tells you audiable via application
 espeak.
 
-The wizard uses following commands:
+The wizard uses following commands under the hood:
 
 * init
 * status
@@ -41,7 +41,7 @@ The wizard uses following commands:
 * log
 * clean
 * gui and gitk
-
+* espeak
 
 Report
 ----
