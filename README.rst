@@ -67,6 +67,9 @@ action itemes: 1
 gone branches: 0
 untracked files: 3
 
+Other features
+----
+
 To do
 ****
 
