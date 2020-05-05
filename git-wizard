@@ -183,8 +183,12 @@ report()
 
 in_progress()
 {
+	local conflict_pattern='^\(^<<<<<<<\)\|\(^>>>>>>>\)'
+	prs conflicted '%1 file(s)' "grep -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)) null \
+		| wc -l | ( read c; echo \$(((c+1)/2)))"
 	prs unmerged '%1 file(s)' 'ls-files --unmerged | cut -f2 | sort -u | wc -l'
 	actg unmerged t "Run merge tool" mergetool
+	[ $prop[conflicted] = 0 ] && actg unmerged a "Add" "add \$(git diff --name-only --relative)"
 
 	prop s in_progress '%1' "$(git status --untracked-files=no HEAD | grep -q -e "You are" -e "in progress" && echo "an operation")"
 	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
