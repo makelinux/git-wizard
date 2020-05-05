@@ -213,12 +213,7 @@ diff_to_quickfix()
 
 modified()
 {
-	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
-	actg staged ' ' "show" 'diff --staged'
-	actg staged c "commit" commit
-	actg staged R "unstage (reset) modifications" 'reset --patch'
-
-	prs modified '%1 file(s)' 'diff --name-only | wc -l'
+	prs modified '%1 file(s)' 'ls-files --modified | wc -l'
 	actg modified 't' "stat" 'diff --stat'
 	actg modified ' ' "show" 'diff'
 	actg modified u "update stage with modifications" 'add --patch'
@@ -226,6 +221,13 @@ modified()
 	actg modified d "discard" 'checkout --patch'
 	acti modified 'e' "edit with vim quickfix" "vim -q <(git diff -U0 --relative --no-prefix | diff_to_quickfix)"
 	actg modified 'g' "gui" "gui"
+
+	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
+	actg staged ' ' "show" 'diff --staged'
+	acti staged e "edit with vim quickfix" "vim -q <(git diff -U0 --staged --relative --no-prefix | diff_to_quickfix)"
+	actg staged c "commit" commit
+	actg staged R "unstage (reset) modifications" 'reset --patch'
+
 }
 
 head-branch()
