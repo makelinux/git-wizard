@@ -193,6 +193,7 @@ in_progress()
 	prop s in_progress '%1' "$(git status --untracked-files=no HEAD | grep -q -e "You are" -e "in progress" && echo "an operation")"
 	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
 	actg in_progress c "Continue rebase" 'rebase --continue'
+	actg in_progress p "Show current patch" 'am --show-current-patch'
 	# TODO:
 	# git status -uno HEAD | grep 'rebase in progress'
 	# git commit --amend
