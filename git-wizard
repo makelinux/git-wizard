@@ -235,14 +235,15 @@ head-branch()
 	rep head "%1 '@v'" 'describe --all --contains --always'
 	acti head ' ' 'print report' report
 	actg head c 'show the last commit' 'show --stat'
+	acti head e "edit with vim quickfix" "vim -q <(git show -U0  --relative --no-prefix | diff_to_quickfix)"
 	actg head l 'list recent log' 'log --pretty="format:%ar: %ae: %h %s" --reverse -n $((LINES-2))'
 	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
 	acti head k "explore with gitk" "gitk"
 	actg head a "amend the last commit" "commit --amend"
 
-	rep branch '' 'rev-parse --abbrev-ref HEAD'
+	rep branch '%1' 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
-	branches_format='%(committerdate:short) - %(align:left,25)%(committerdate:relative)%(end) %(align:left,25)%(objectname:short) %(refname:short)%(end) %(subject)'
+	branches_format='%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) %(refname:short)%(end) %(subject)'
 	actg local_branches ' ' 'list' "for-each-ref --sort=committerdate --format '$branches_format' refs/heads"
 	rep remote_branches '%1' 'branch --remote | wc -l'
 	actg remote_branches ' ' 'list recent' "branch --remotes --sort=committerdate --format '$branches_format' | tail -n $((LINES-2))"
@@ -261,7 +262,7 @@ remote()
 		test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
 		#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
 		if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
-			git fetch --all
+			git fetch --all --prune
 		fi
 		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
 		actg local_commits ' ' "list" "log ..@{u}"
