@@ -1,17 +1,17 @@
 git-wizard - instant git magic and tricks
 =====
 
-Interactive cli git utility for efficient work
+An interactive git `Command-line interface (CLI)<https://en.wikipedia.org/wiki/Command-line_interface/>` utility for working efficiently.
 
-Wizard's vision: collect git tricks, troubleshooting techniques and git wisdom
-under one hat and perform them interactively in dialogue.
+Git-Wizard's vision: collect git tricks, troubleshooting techniques and git wisdom
+under one hat and perform them interactively.
 
-Beginners can enjoy interactively learn git functionality.
-Experienced command line git users can save they time by using the wizard
-to preform frequent operations.
+Beginners can enjoy learning git functionality interactively.
+Experienced command line git users can save time by using the wizard
+to perform frequent operations.
 
-For example when you have a merge conflict the wizard first of all suggests
-you to run mergetool.
+For example, when you have a merge conflict the wizard first suggests
+that you run mergetool.
 
 .. contents::
    :local:
@@ -21,20 +21,20 @@ Features
 
 Fast
 ----
-* Requires minimal key presses to perform requires actions.
-* Faster then raw git cli or gui for many actions
+* Requires minimal key presses to perform the necessary actions.
+* Faster then raw git CLI or GUI for many actions.
 
 Comfortable
 ----
-* Prints improved reports
-* Takes on routine tasks automatically
+* Displays improved reports.
+* Automatically performs routine tasks.
 
 Smart
 ----
-* Prioritizes issues accordingly importance
-* Filters unstable and proposes to perform suitable tasks
+* Prioritizes issues by their importance.
+* Filters unsuitable tasks and proposes to perform suitable ones.
 
-For example the wizard proposes add changes to stage only when
+For example, the wizard proposes to stage changes only when
 there are changed files.
 
 Details
@@ -42,23 +42,24 @@ Details
 
 Internal checks
 ----
-Each iteration the wizard checks whether the repository contains collisions,
+Each iteration, the wizard checks whether the repository contains collisions,
 operations in progress, conflicts, unmerged files,
-changes, stashes, ahead/behind commits, untracked files.
-Periodically automatically it performs fetch.
-Some valuable short messages the wizard tells you audible via application
-espeak.
+changes, stashes, ahead/behind commits, and untracked files.
+
+It performs "git fetch" periodically and automatically.
+
+It pronounces some valuable short messages audibly using the espeak application.
 
 Internal actions
 ----
 The wizard uses following commands under the hood: init, status, add,
 commit, mergetool, diff, fetch, push, pull, clone, stash, log, clean,
-gui and gitk, espeak
+gui and gitk, espeak.
 
 Report
 ----
 
-Just reports current status of the repository:
+Reports the current status of the repository:
 
 git-wizard report::
 
@@ -87,5 +88,5 @@ Other features
 To do
 ****
 
-* Analize details of 'in progress' status.
+* Analyze the details of 'in progress' status.
 * **You are welcome to request new features and add git tricks**
