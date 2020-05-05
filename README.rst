@@ -20,7 +20,8 @@ Features
 ****
 
 Each iteration the wizard checks whether the repository contains collisions,
-operations in progress, changes, stashes, ahead/behind commits, untracked files.
+operations in progress, conflicts, unmerged files,
+changes, stashes, ahead/behind commits, untracked files.
 Periodically automatically it performs fetch.
 Some valuable short messages the wizard tells you audiable via application
 espeak.
@@ -51,6 +52,7 @@ Just reports current status of the repostory:
 git-wizard report::
 
   root: /home/costa/Dropbox/linux/git-wizard
+  conflicted files: 0
   unmerged files: 0
   in progress:
   odified files: 2
