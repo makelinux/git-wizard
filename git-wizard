@@ -183,8 +183,8 @@ report()
 
 in_progress()
 {
-	prs unmerged '%1 file(s)' 'diff --name-status --diff-filter=U | wc -l'
-	actg unmerged g "Run merge tool" mergetool
+	prs unmerged '%1 file(s)' 'ls-files --unmerged | cut -f2 | sort -u | wc -l'
+	actg unmerged t "Run merge tool" mergetool
 
 	prop s in_progress '%1' "$(git status --untracked-files=no HEAD | grep -q -e "You are" -e "in progress" && echo "an operation")"
 	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
