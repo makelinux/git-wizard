@@ -92,6 +92,18 @@ out()
 	espeak "$2" 2> /dev/null &
 }
 
+print-actions()
+{
+	for n ({1..${#actprop}}) {
+		[[ $actprop[$n] != $key ]] && continue
+		kk+=($actkey[$n])
+		actk[$actkey[$n]]=$act[$n]
+		echo " [$actkey[$n]] - $conf[$n]"
+	}
+	echo " [Enter] - continue"
+	echo " * - exit"
+}
+
 # Ask user which available actions to perform
 perform-actions()
 {
@@ -104,16 +116,7 @@ perform-actions()
 		[[ -z "$v" || "$v" == 0 ]] && continue
 
 		out "What to do with" "$(prop-print $key) ?"
-
-		for n ({1..${#actprop}}) {
-			[[ $actprop[$n] != $key ]] && continue
-			kk+=($actkey[$n])
-			actk[$actkey[$n]]=$act[$n]
-			echo " [$actkey[$n]] - $conf[$n]"
-		}
-		echo " [Enter] - continue"
-		echo " * - exit"
-		echo $probe[$key]
+		print-actions
 		ask '>'
 		[ "$REPLY" = $'\n' ] && continue
 		echo
