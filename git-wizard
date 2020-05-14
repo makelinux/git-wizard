@@ -257,13 +257,13 @@ head-branch()
 remote()
 {
 	rep remote '%1' "config --get branch.$prop[branch].remote"
+	local h=$git_dir/FETCH_HEAD
+	test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
+	#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
+	if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
+		git fetch --all --prune
+	fi
 	if [[ $prop[remote] ]]; then
-		local h=$git_dir/FETCH_HEAD
-		test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
-		#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
-		if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
-			git fetch --all --prune
-		fi
 		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
 		actg local_commits ' ' "list" "log ..@{u}"
 		actg local_commits p "Push to remote" push
