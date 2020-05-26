@@ -181,6 +181,20 @@ report()
 	echo
 }
 
+git-status-parse()
+{
+	git status | while read a; do \
+		if [[ "$a" =~ "currently (.*) commit ([^.]*)" ]]; then prop[in_progress]=$match[1]; hash=$match[2]; fi
+		[[ "$a" =~ "currently ([^ ]*)" ]] && prop[in_progress]=$match[1]
+		[[ "$a" =~ "while ([^ ]*)" ]] && prop[in_progress]=$match[1]
+		[[ "$a" =~ 'git ((.*) --edit-todo)' ]] && actg in_progress v "view and edit $match[2]" "$match[1]"
+		[[ "$a" =~ 'git ((.*) --continue)' ]] && actg in_progress c "continue $match[2]" "$match[1]"
+		[[ "$a" =~ 'git ((.*) --skip)' ]] && actg in_progress s "skip patch '$(cat $prop[root]/.git/rebase-apply/final-commit)'" "$match[1]"
+		[[ "$a" =~ 'git ((.*) --abort)' ]] && actg in_progress C "cancel $match[2]" "$match[1]"
+		[[ "$a" =~ 'git (am --show-current-patch)' ]] && actg in_progress c "Show current patch" "$match[1]"
+	done
+}
+
 in_progress()
 {
 	local conflict_pattern='^\(^<<<<<<<\)\|\(^>>>>>>>\)'
@@ -192,8 +206,7 @@ in_progress()
 
 	prop s in_progress '%1' "$(git status --untracked-files=no HEAD | grep -q -e "You are" -e "in progress" && echo "an operation")"
 	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
-	actg in_progress c "Continue rebase" 'rebase --continue'
-	actg in_progress p "Show current patch" 'am --show-current-patch'
+	git-status-parse
 	# TODO:
 	# git status -uno HEAD | grep 'rebase in progress'
 	# git commit --amend
