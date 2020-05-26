@@ -252,11 +252,12 @@ head-branch()
 	actg head l 'list recent log' 'log --pretty="format:%ar: %ae: %h %s" --reverse -n $((LINES-2))'
 	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
 	acti head k "explore with gitk" "gitk"
+	acti head t "text-mode interface for Git" tig
 	actg head a "amend the last commit" "commit --amend"
 
 	rep branch '%1' 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
-	branches_format='%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) %(refname:short)%(end) %(subject)'
+	branches_format=$'%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) \e[1m%(refname:short)\e[0m%(end) %(subject)'
 	actg local_branches ' ' 'list' "for-each-ref --sort=committerdate --format '$branches_format' refs/heads"
 	rep remote_branches '%1' 'branch --remote | wc -l'
 	actg remote_branches ' ' 'list recent' "branch --remotes --sort=committerdate --format '$branches_format' | tail -n $((LINES-2))"
@@ -293,7 +294,8 @@ action_itemes()
 	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
 
 	prs gone_branches '%1' "branch -vv | grep ': gone]' | wc -l"
-	actg gone_branches 'D' "delete gone branches" 'branch -d $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
+	actg gone_branches 'd' "delete merged gone branches" 'branch -d $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
+	actg gone_branches 'D' "delete all gone branches" 'branch -D $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
 }
 
 untracked()
@@ -301,7 +303,8 @@ untracked()
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
 	actg untracked ' ' "list" 'status --untracked-files=normal'
 	actg untracked a "add and stage" 'add --interactive'
-	actg untracked C "cleanup" 'clean --interactive -d'
+	actg untracked c "cleanup" 'clean --interactive -d'
+	acti untracked r "remove interactively" 'rm --recursive --interactive=always $(git ls-files --others --directory --exclude-standard --exclude .gitignore)'
 	actg untracked i "ignore" \
 		'ls-files --others --directory --exclude-standard --exclude .gitignore \
 		>> .gitignore'
