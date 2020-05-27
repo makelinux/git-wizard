@@ -14,6 +14,7 @@ action=
 while [[ "$1" =~ "^--" ]]; do
 	case $1 in
 		'--quiet') quiet=1; shift;;
+		'--verbose') verbose=1; shift;;
 		'--action') action=$2; shift 2;;
 		*)
 			echo error: unknown argument $1
@@ -53,7 +54,11 @@ prop()
 }
 
 # functions for reading git property
-prop_git() { prop "$1" "$2" "$3" "$(zsh -c "git $4" 2>/dev/null)" }
+prop_git()
+{
+	test "$verbose" && echo checking $2: git $4
+	prop "$1" "$2" "$3" "$(zsh -c "git $4" 2>/dev/null)"
+}
 
 # rep - property for report only
 rep() { prop_git "l" "$1" "$2" "$3" }
