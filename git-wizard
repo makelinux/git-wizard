@@ -218,9 +218,14 @@ git-status-parse()
 
 in_progress()
 {
-	local conflict_pattern='^\(^<<<<<<<\)\|\(^>>>>>>>\)'
-	prs conflicted '%1 file(s)' "grep -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)) null \
-		| wc -l | ( read c; echo \$(((c+1)/2)))"
+	local conflict_pattern='^\(^<<<<<<<\)\|\(^=======\)\|\(^>>>>>>>\)'
+	#prs conflicted '%1 file(s)' "grep -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)) null \
+	#	| wc -l | ( read c; echo \$(((c+2)/3)))"
+	grep -n -e '\(^<<<<<<<\)\|\(^=======\)\|\(^>>>>>>>\)' -- $(echo $(git diff --name-only --relative)) /dev/null > conflicts
+	prop s conflicted 'conflict(s)' "$(cat conflicts | wc -l | ( read c; echo $(((c+2)/3))))"
+	#acti conflicted 'e' "edit with vim quickfix" 'vim -q <(grep -n -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)))'
+	#acti conflicted 'e' "edit with vim quickfix" 'vim -q <(grep -n -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)))'
+	acti conflicted 'e' "edit with vim quickfix" 'vim -q conflicts'
 	prs unmerged '%1 file(s)' 'ls-files --unmerged | cut -f2 | sort -u | wc -l'
 	actg unmerged t "Run merge tool" mergetool
 	[ $prop[conflicted] = 0 ] && actg unmerged a "Add" "add \$(git diff --name-only --relative)"
