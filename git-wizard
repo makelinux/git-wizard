@@ -186,17 +186,33 @@ report()
 	echo
 }
 
+git-get-file()
+{
+	REPLY=
+	cat $prop[root]/.git/$1 2> /dev/null | read
+	echo "$REPLY"
+}
+
 git-status-parse()
 {
-	git status | while read a; do \
+	local mm=$(git-get-file MERGE_MSG)
+	local mh=$(git-get-file MERGE_HEAD)
+	if [[ "$mh" ]]; then prop[in_progress]=merge; fi
+	local oc=$(git-get-file rebase-apply/original-commit)
+	local fcm=$(git-get-file rebase-apply/final-commit)
+	local sc=$(git-get-file rebase-merge/stopped-sha) # also REBASE_HEAD) #
+	local sm=$(git-get-file rebase-merge/message) # also MERGE_MSG
+	test "$oc" && actg in_progress s "Show current patch '$fcm'" "show $oc"
+	test "$sc" && actg in_progress s "Show current patch '$sm'" "show $sc"
+	git status --untracked-files=no | while read a; do \
 		if [[ "$a" =~ "currently (.*) commit ([^.]*)" ]]; then prop[in_progress]=$match[1]; hash=$match[2]; fi
 		[[ "$a" =~ "currently ([^ ]*)" ]] && prop[in_progress]=$match[1]
 		[[ "$a" =~ "while ([^ ]*)" ]] && prop[in_progress]=$match[1]
-		[[ "$a" =~ 'git ((.*) --edit-todo)' ]] && actg in_progress v "view and edit $match[2]" "$match[1]"
+		[[ "$a" =~ 'git ((.*) --edit-todo)' ]] && actg in_progress v "view and edit $match[2] todo list" "$match[1]"
 		[[ "$a" =~ 'git ((.*) --continue)' ]] && actg in_progress c "continue $match[2]" "$match[1]"
-		[[ "$a" =~ 'git ((.*) --skip)' ]] && actg in_progress s "skip patch '$(cat $prop[root]/.git/rebase-apply/final-commit)'" "$match[1]"
+		[[ "$fcm" && "$a" =~ 'git ((.*) --skip)' ]] && actg in_progress S "skip current patch '$fcm'" "$match[1]"
+		[[ "$sm" && "$a" =~ 'git ((.*) --skip)' ]] && actg in_progress S "skip current patch '$sm'" "$match[1]"
 		[[ "$a" =~ 'git ((.*) --abort)' ]] && actg in_progress C "cancel $match[2]" "$match[1]"
-		[[ "$a" =~ 'git (am --show-current-patch)' ]] && actg in_progress c "Show current patch" "$match[1]"
 	done
 }
 
