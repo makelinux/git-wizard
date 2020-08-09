@@ -256,9 +256,9 @@ modified()
 	prs modified '%1 file(s)' 'ls-files --modified | wc -l'
 	actg modified 't' "stat" 'diff --stat'
 	actg modified ' ' "show" 'diff'
-	actg modified u "update stage with modifications interactively" 'add --patch'
-	actg modified s "push into stash interactively" 'stash push --patch'
-	actg modified d "discard interactively" 'checkout --patch'
+	actg modified u "update stage with modifications selectively" 'add --patch'
+	actg modified s "push into stash selectively" 'stash push --patch'
+	actg modified d "discard selectively" 'checkout --patch'
 	acti modified 'e' "edit with vim quickfix" "vim -q <(git diff -U0 --relative --no-prefix | diff_to_quickfix)"
 	actg modified 'h' "html view" "diff --relative --no-prefix | pygmentize -l diff -f html -O full > modifications.html; xdg-open modifications.html"
 	actg modified 'g' "gui" "gui"
@@ -267,7 +267,7 @@ modified()
 	actg staged ' ' "show" 'diff --staged'
 	acti staged e "edit with vim quickfix" "vim -q <(git diff -U0 --staged --relative --no-prefix | diff_to_quickfix)"
 	actg staged c "commit" commit
-	actg staged R "unstage (reset) modifications interactively" 'reset --patch'
+	actg staged r "unstage (reset) modifications selectively" 'reset --patch'
 }
 
 head-branch()
@@ -276,15 +276,15 @@ head-branch()
 	acti head ' ' 'print report' report
 	actg head c 'show the last commit' 'show --stat'
 	acti head e "edit with vim quickfix" "vim -q <(git show -U0  --relative --no-prefix | diff_to_quickfix)"
-	actg head l 'list recent log' 'log --pretty="format:%ar: %ae: %h %s" --reverse -n $((LINES-2))'
-	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
+	actg head l 'list recent log' $'log --pretty="format:%ar: %ae: %h %s \e[4m%D\e[0m" --reverse -n $((LINES-2))'
+	actg head s "check the head status" 'status --untracked-files=no HEAD' # without modifered
 	acti head k "explore with gitk" "gitk"
 	acti head t "text-mode interface for Git" tig
 	actg head a "amend the last commit" "commit --amend"
 
 	rep branch '%1' 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
-	branches_format=$'%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) \e[1m%(refname:short)\e[0m%(end) %(subject)'
+	branches_format=$'%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) \e[1m%(refname:short)\e[0m%(end) %(subject) \e[3;37m%(authorname)\e[0m'
 	actg local_branches ' ' 'list' "for-each-ref --sort=committerdate --format '$branches_format' refs/heads"
 	rep remote_branches '%1' 'branch --remote | wc -l'
 	actg remote_branches ' ' 'list recent' "branch --remotes --sort=committerdate --format '$branches_format' | tail -n $((LINES-2))"
@@ -316,7 +316,7 @@ remote()
 
 action_itemes()
 {
-	rep action_itemes '%1' 'grep --max-depth=3 -w -eTODO -eFIXME | wc -l'
+	rep action_itemes '%1' 'grep --max-depth=2 -w -eTODO -eFIXME | wc -l'
 	actg action_itemes ' ' list 'grep -w -n -eTODO -eFIXME'
 	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
 
@@ -331,7 +331,7 @@ untracked()
 	actg untracked ' ' "list" 'status --untracked-files=normal'
 	actg untracked a "add and stage" 'add --interactive'
 	actg untracked c "cleanup" 'clean --interactive -d'
-	acti untracked r "remove interactively" 'rm --recursive --interactive=always $(git ls-files --others --directory --exclude-standard --exclude .gitignore)'
+	acti untracked r "remove selectively" 'rm --recursive --interactive=always $(git ls-files --others --directory --exclude-standard --exclude .gitignore)'
 	actg untracked i "ignore" \
 		'ls-files --others --directory --exclude-standard --exclude .gitignore \
 		>> .gitignore'
