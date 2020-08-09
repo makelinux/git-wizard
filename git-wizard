@@ -160,7 +160,7 @@ prop-print()
 
 summary()
 {
-	local m="Summary: head '$prop[head]'"
+	local m="Summary: head '$prop[head]' on branch '$prop[branch]'"
 	for key in $keys; do
 		[[ ! $flag[$key] =~ s ]] && continue
 		p="$prop[$key]"
@@ -253,6 +253,8 @@ diff_to_quickfix()
 
 modified()
 {
+	## checks for modified and staged(cached) files and what to do with them
+
 	prs modified '%1 file(s)' 'ls-files --modified | wc -l'
 	actg modified 't' "stat" 'diff --stat'
 	actg modified ' ' "show" 'diff'
