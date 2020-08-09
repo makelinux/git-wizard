@@ -301,12 +301,16 @@ remote()
 	local h=$git_dir/FETCH_HEAD
 	test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
 	#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
-	if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
+	if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 360 || "$prop[fetch_age]" -lt 0 ]]; then
 		git fetch --all --prune
+
+		prs gone_branches '%1' "branch -vv | grep ': gone]' | wc -l"
+		actg gone_branches 'd' "delete merged gone branches" 'branch -d $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
+		actg gone_branches 'D' "delete all gone branches" 'branch -D $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
 	fi
 	if [[ $prop[remote] ]]; then
-		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
-		actg local_commits ' ' "list" "log ..@{u}"
+		prs local_commits '%1' 'rev-list --count @{push}..'
+		actg local_commits ' ' "list" "log @{push}.."
 		actg local_commits p "Push to remote" push
 		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
 		actg remote_commits ' ' "list" 'log --stat HEAD..@{u}'
@@ -319,10 +323,6 @@ action_itemes()
 	rep action_itemes '%1' 'grep --max-depth=2 -w -eTODO -eFIXME | wc -l'
 	actg action_itemes ' ' list 'grep -w -n -eTODO -eFIXME'
 	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
-
-	prs gone_branches '%1' "branch -vv | grep ': gone]' | wc -l"
-	actg gone_branches 'd' "delete merged gone branches" 'branch -d $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
-	actg gone_branches 'D' "delete all gone branches" 'branch -D $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
 }
 
 untracked()
