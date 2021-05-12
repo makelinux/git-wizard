@@ -1,7 +1,7 @@
 git-wizard - instant git magic and tricks
 =====
 
-An interactive git `Command-line interface (CLI)<https://en.wikipedia.org/wiki/Command-line_interface/>` utility for working efficiently.
+An interactive git shell utility for working efficiently.
 
 Git-Wizard's vision: collect git tricks, troubleshooting techniques and git wisdom
 under one hat and perform them interactively.
