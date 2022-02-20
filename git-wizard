@@ -334,6 +334,14 @@ remote()
 		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
 		actg remote_commits ' ' "list" 'log --stat HEAD..@{u}'
 		actg remote_commits l "pull from remote" 'pull --autostash'
+	else # when there is no remote assigned
+		rep head_remote '%1' "config --get branch.$prop[head].remote"
+		if hr=$prop[head_remote] && [ $prop[branch] != HEAD ]; then
+			echo head_remote $prop[head_remote]
+			echo hr $hr
+			echo branch $prop[branch]
+			actg branch p "Push new branch to remote $hr" "push --set-upstream $hr $prop[branch]"
+		fi
 	fi
 }
 
