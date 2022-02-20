@@ -80,6 +80,7 @@ prs() { prop_git "s" "$1" "$2" "$3" }
 # internal action
 acti()
 {
+	test "$verbose" && echo acti "$@"
 	actprop+=($1)
 	#[[ "${actkey[(ie)$2]}" -le "${#actkey}" ]] && echo "duplicated key $2"
 	actkey+=("$2")
@@ -138,6 +139,7 @@ perform-actions()
 		[ "$REPLY" = $'\n' ] && continue
 		echo
 		[ -z "$actk[$REPLY]" ] && return 1
+		test "$verbose" && echo "$actk[$REPLY]"
 		eval $actk[$REPLY]
 		test "$action" && exit
 		break
