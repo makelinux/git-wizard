@@ -400,15 +400,32 @@ gitw-start()
 	esac
 }
 
+fail()
+{
+	let fails+=1
+	set | grep HIST
+	history
+	setopt
+	echo
+}
+
 [ "$1" = unit-tests ] &&
 {
 	local fails=0
-	d=$(mktemp -d)
-	pushd $d
-	git-wizard --action y || { echo Fail && false }
-	let fails+=$?
-	popd
+	#d=$(mktemp -d)
+	d=/tmp/git-wizard-test
 	rm -rf $d
+	mkdir $d
+	pushd $d
+	touch empty
+	HISTFILE=qqq
+	SAVEHIST=3
+	set -o pipefail
+	git-wizard --action y | grep Initialized || fail
+	ls -A
+	#git-wizard
+	popd
+	#rm -rf $d
 	echo Fails: $fails
 	exit $fails
 }
