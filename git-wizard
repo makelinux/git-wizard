@@ -294,9 +294,13 @@ head-branch()
 	acti head t "text-mode interface for Git" tig
 	actg head a "amend the last commit" "commit --amend"
 
-	rep branch '%1' 'rev-parse --abbrev-ref HEAD'
+	rep branch "%1 '@v'" 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
-	branches_format=$'%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) \e[1m%(refname:short)\e[0m%(end) %(subject) \e[3;37m%(authorname)\e[0m'
+	branches_format=(
+		$'%(committerdate:short) - %(align:left,25)%(committerdate:relative)'
+		$'%(upstream:trackshort) %(end)'
+		$'%(align:left,25)\e[37m%(objectname:short)\e[0m \e[1m%(refname:short)\e[0m%(end)'
+		$'%(subject)\e[3;37m. %(authorname)\e[0m')
 	actg local_branches ' ' 'list' "for-each-ref --sort=committerdate --format '$branches_format' refs/heads"
 	actg local_branches 's' 'switch' 'switch $(select_branch)'
 	rep remote_branches '%1' 'branch --remote | wc -l'
