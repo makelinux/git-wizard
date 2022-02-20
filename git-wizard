@@ -241,6 +241,13 @@ in_progress()
 
 }
 
+select_branch()
+{
+	select a in $(git branch --format='%(refname:short)'); do break; done
+	[ $quiet = 0 ] && espeak -v en+f4 "Selected branch $a" 2> /dev/null &
+	echo $a
+}
+
 diff_to_quickfix()
 {
 	local file=
@@ -291,6 +298,7 @@ head-branch()
 	rep local_branches '%1' 'branch | wc -l'
 	branches_format=$'%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) \e[1m%(refname:short)\e[0m%(end) %(subject) \e[3;37m%(authorname)\e[0m'
 	actg local_branches ' ' 'list' "for-each-ref --sort=committerdate --format '$branches_format' refs/heads"
+	actg local_branches 's' 'switch' 'switch $(select_branch)'
 	rep remote_branches '%1' 'branch --remote | wc -l'
 	actg remote_branches ' ' 'list recent' "branch --remotes --sort=committerdate --format '$branches_format' | tail -n $((LINES-2))"
 
