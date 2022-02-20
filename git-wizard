@@ -318,7 +318,9 @@ remote()
 {
 	rep remote '%1' "config --get branch.$prop[branch].remote"
 	local h=$git_dir/FETCH_HEAD
-	test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
+	test -e $h &&
+		prop l fetch_age '%1 (min) @v' \
+			"$(((`date +%s` - `stat -c %Z $h`) / 60))"
 	#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
 	if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 360 || "$prop[fetch_age]" -lt 0 ]]; then
 		git fetch --all --prune
