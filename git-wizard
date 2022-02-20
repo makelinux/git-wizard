@@ -29,16 +29,23 @@ ask()
 	read -r -k "?$1"
 }
 
+reset-actions()
+{
+	actprop=()
+	actkey=()
+	conf=()
+	act=()
+	restart=1
+}
+
 reset()
 {
 	prop=()
 	flag=()
 	msg=()
 	keys=()
-	actprop=()
-	actkey=()
-	conf=()
-	act=()
+	reset-actions
+	restart=0
 }
 
 # function for acquiring common property
@@ -266,19 +273,34 @@ xdg-open()
 		|| /usr/bin/xdg-open "$@"
 }
 
+modifications()
+{
+	reset-actions
+	git diff --stat
+	actg modified ' ' "show diff of the modifications" 'diff'
+	actg modified 'l' "run difftool" "difftool"
+	actg modified 'h' "html view" "diff --relative --no-prefix | pygmentize -l diff -O full -o modifications.html; xdg-open modifications.html"
+	print-actions
+	ask '>'
+	[ "$REPLY" = $'\n' ] && return
+	echo
+	[ -z "$actk[$REPLY]" ] && return
+	test "$verbose" && echo "$actk[$REPLY]"
+	eval $actk[$REPLY]
+	test "$action" && exit
+	break
+}
+
 modified()
 {
 	## checks for modified and staged(cached) files and what to do with them
 
 	prs modified '%1 file(s)' 'ls-files --modified | wc -l'
-	actg modified 't' "stat" 'diff --stat'
-	actg modified ' ' "show" 'diff'
+	acti modified ' ' "show modifications" "modifications"
 	actg modified u "update stage with modifications selectively" 'add --patch'
 	actg modified s "push into stash selectively" 'stash push --patch'
 	actg modified d "discard selectively" 'checkout --patch'
 	acti modified 'e' "edit with vim quickfix" "vim -q <(git diff -U0 --relative --no-prefix | diff_to_quickfix)"
-	actg modified 'h' "html view" "diff --relative --no-prefix | pygmentize -l diff -O full -o modifications.html; xdg-open modifications.html"
-	actg modified 'l' "run difftool" "difftool"
 	actg modified 'g' "gui" "gui"
 
 	prs staged '%1 file(s)' 'diff --name-only --staged | wc -l'
