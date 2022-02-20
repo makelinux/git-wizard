@@ -293,6 +293,7 @@ head-branch()
 	acti head k "explore with gitk" "gitk"
 	acti head t "text-mode interface for Git" tig
 	actg head a "amend the last commit" "commit --amend"
+	actg head u "undo the last commit" "reset --soft HEAD~1"
 
 	rep branch "%1 '@v'" 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
@@ -309,6 +310,7 @@ head-branch()
 	prs stashes '%1' 'stash list | wc -l'
 	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
 	actg stashes o "pop from stash" 'stash pop'
+	actg stashes d "drop the topmost stash" 'stash drop'
 	rep commited '%1' 'log -1 --format="%ar"'
 }
 
