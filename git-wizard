@@ -339,8 +339,8 @@ remote()
 
 action_itemes()
 {
-	rep action_itemes '%1' 'grep --max-depth=2 -w -eTODO -eFIXME | wc -l'
-	actg action_itemes ' ' list 'grep -w -n -eTODO -eFIXME'
+	rep action_itemes '%1' 'grep --no-messages --max-depth=2 -w -eTODO -eFIXME | wc -l'
+	actg action_itemes ' ' list 'grep --no-messages -w -n -eTODO -eFIXME'
 	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
 }
 
