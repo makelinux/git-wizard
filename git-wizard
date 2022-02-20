@@ -218,10 +218,10 @@ git-status-parse()
 
 in_progress()
 {
-	local conflict_pattern='^\(^<<<<<<<\)\|\(^=======\)\|\(^>>>>>>>\)'
+	local conflict_pattern='^\(^<<<<<<< \)\|\(^=======$\)\|\(^>>>>>>> \)'
 	#prs conflicted '%1 file(s)' "grep -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)) null \
 	#	| wc -l | ( read c; echo \$(((c+2)/3)))"
-	grep -n -e '\(^<<<<<<<\)\|\(^=======\)\|\(^>>>>>>>\)' -- $(echo $(git diff --name-only --relative)) /dev/null > conflicts
+	grep -s -r -n -e "$conflict_pattern" -- $(echo $(git diff --name-only --relative)) /dev/null > conflicts
 	prop s conflicted 'conflict(s)' "$(cat conflicts | wc -l | ( read c; echo $(((c+2)/3))))"
 	#acti conflicted 'e' "edit with vim quickfix" 'vim -q <(grep -n -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)))'
 	#acti conflicted 'e' "edit with vim quickfix" 'vim -q <(grep -n -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)))'
