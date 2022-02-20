@@ -3,7 +3,7 @@ git-wizard - instant git magic and tricks
 
 An interactive git shell utility for working efficiently.
 
-Git-Wizard's vision: collect git tricks, troubleshooting techniques and git wisdom
+Vision: collect git tricks, troubleshooting techniques and git wisdom
 under one hat and perform them interactively.
 
 Beginners can enjoy learning git functionality interactively.
