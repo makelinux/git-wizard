@@ -115,7 +115,7 @@ print-actions()
 		[[ $actprop[$n] != $key ]] && continue
 		kk+=($actkey[$n])
 		actk[$actkey[$n]]=$act[$n]
-		echo " [$actkey[$n]] - $conf[$n]"
+		echo " ﹝$actkey[$n]﹞ — $conf[$n]"
 	}
 	echo " [Enter] - continue"
 	echo " * - exit"
