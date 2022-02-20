@@ -258,6 +258,14 @@ diff_to_quickfix()
 	#perl -ne '/^\+\+\+ (.+)/ && { $f="$1"};/@@.*\+(\d+)/ &&print "$f:$1:$_\n"'
 }
 
+xdg-open()
+{
+
+	test "$SSH_CLIENT" \
+		&& ssh ${SSH_CLIENT%% *} xdg-open $PWD/modifications.html \
+		|| /usr/bin/xdg-open "$@"
+}
+
 modified()
 {
 	## checks for modified and staged(cached) files and what to do with them
