@@ -4,7 +4,7 @@
 # Git Wizard
 # Interactive front end git wrapper script
 
-declare -A prop flag msg
+declare -A prop flag msg message_prev
 declare -a keys actprop actkey conf act
 
 echo | espeak 2> /dev/null
@@ -14,6 +14,7 @@ action=
 while [[ "$1" =~ "^--" ]]; do
 	case $1 in
 		'--quiet') quiet=1; shift;;
+		'--verbose') verbose=1; shift;;
 		'--action') action=$2; shift 2;;
 		*)
 			echo error: unknown argument $1
@@ -28,16 +29,23 @@ ask()
 	read -r -k "?$1"
 }
 
+reset-actions()
+{
+	actprop=()
+	actkey=()
+	conf=()
+	act=()
+	restart=1
+}
+
 reset()
 {
 	prop=()
 	flag=()
 	msg=()
 	keys=()
-	actprop=()
-	actkey=()
-	conf=()
-	act=()
+	reset-actions
+	restart=0
 }
 
 # function for acquiring common property
@@ -53,7 +61,11 @@ prop()
 }
 
 # functions for reading git property
-prop_git() { prop "$1" "$2" "$3" "$(zsh -c "git $4" 2>/dev/null)" }
+prop_git()
+{
+	test "$verbose" && echo checking $2: git $4
+	prop "$1" "$2" "$3" "$(zsh -c "git $4" 2>/dev/null)"
+}
 
 # rep - property for report only
 rep() { prop_git "l" "$1" "$2" "$3" }
@@ -68,6 +80,7 @@ prs() { prop_git "s" "$1" "$2" "$3" }
 # internal action
 acti()
 {
+	test "$verbose" && echo acti "$@"
 	actprop+=($1)
 	#[[ "${actkey[(ie)$2]}" -le "${#actkey}" ]] && echo "duplicated key $2"
 	actkey+=("$2")
@@ -86,10 +99,15 @@ actg()
 
 out()
 {
-	echo "$1 $2"
+	local key=$1
+	local prefix=$2
+	local message=$3
+	echo "$prefix \e[1m$message\e[0m"
 	[ $quiet != 0 ] && return
 	test "$action" && return
-	espeak "$2" 2> /dev/null &
+	test "$message_prev[$key]" = "$message" && return
+	espeak -v en+f4 "$message" 2> /dev/null &
+	message_prev[$key]="$message"
 }
 
 print-actions()
@@ -98,7 +116,7 @@ print-actions()
 		[[ $actprop[$n] != $key ]] && continue
 		kk+=($actkey[$n])
 		actk[$actkey[$n]]=$act[$n]
-		echo " [$actkey[$n]] - $conf[$n]"
+		echo " ﹝$actkey[$n]﹞ — $conf[$n]"
 	}
 	echo " [Enter] - continue"
 	echo " * - exit"
@@ -115,12 +133,13 @@ perform-actions()
 		[[ ! $flag[$key] =~ a ]] && continue
 		[[ -z "$v" || "$v" == 0 ]] && continue
 
-		out "What to do with" "$(prop-print $key) ?"
+		out "What to do with" "$(prop-print $key)?"
 		print-actions
 		ask '>'
 		[ "$REPLY" = $'\n' ] && continue
 		echo
 		[ -z "$actk[$REPLY]" ] && return 1
+		test "$verbose" && echo "$actk[$REPLY]"
 		eval $actk[$REPLY]
 		test "$action" && exit
 		break
@@ -155,14 +174,14 @@ prop-print()
 
 summary()
 {
-	local m="Summary: head '$prop[head]'"
+	local m="Summary: head '$prop[head]' on branch '$prop[branch]'"
 	for key in $keys; do
 		[[ ! $flag[$key] =~ s ]] && continue
 		p="$prop[$key]"
 		[ -z "$p" -o "$p" = 0 ] && continue
 		m+=", $(prop-print $key)"
 	done
-	out "" $m
+	out "" "" $m
 }
 
 report()
@@ -181,24 +200,66 @@ report()
 	echo
 }
 
+git-get-file()
+{
+	REPLY=
+	cat $prop[root]/.git/$1 2> /dev/null | read
+	echo "$REPLY"
+}
+
+git-status-parse()
+{
+	local mm=$(git-get-file MERGE_MSG)
+	local mh=$(git-get-file MERGE_HEAD)
+	if [[ "$mh" ]]; then prop[in_progress]=merge; fi
+	local oc=$(git-get-file rebase-apply/original-commit)
+	local fcm=$(git-get-file rebase-apply/final-commit)
+	local sc=$(git-get-file rebase-merge/stopped-sha) # also REBASE_HEAD) #
+	local sm=$(git-get-file rebase-merge/message) # also MERGE_MSG
+	test "$oc" && actg in_progress s "Show current patch '$fcm'" "show $oc"
+	test "$sc" && actg in_progress s "Show current patch '$sm'" "show $sc"
+	git status --untracked-files=no | while read a; do \
+		if [[ "$a" =~ "currently (.*) commit ([^.]*)" ]]; then prop[in_progress]=$match[1]; hash=$match[2]; fi
+		[[ "$a" =~ "currently ([^ ]*)" ]] && prop[in_progress]=$match[1]
+		[[ "$a" =~ "while ([^ ]*)" ]] && prop[in_progress]=$match[1]
+		[[ "$a" =~ 'git ((.*) --edit-todo)' ]] && actg in_progress v "view and edit $match[2] todo list" "$match[1]"
+		[[ "$a" =~ 'git ((.*) --continue)' ]] && actg in_progress c "continue $match[2]" "$match[1]"
+		[[ "$fcm" && "$a" =~ 'git ((.*) --skip)' ]] && actg in_progress S "skip current patch '$fcm'" "$match[1]"
+		[[ "$sm" && "$a" =~ 'git ((.*) --skip)' ]] && actg in_progress S "skip current patch '$sm'" "$match[1]"
+		[[ "$a" =~ 'git ((.*) --abort)' ]] && actg in_progress C "cancel $match[2]" "$match[1]"
+	done
+}
+
 in_progress()
 {
-	local conflict_pattern='^\(^<<<<<<< \)\|\(^>>>>>>> \)\|\(^=======$\)'
-	prs conflicted '%1 file(s)' "grep -e '$conflict_pattern' $(echo $(git diff --name-only --relative)) \
-		| wc -l | ( read c; echo \$(((c+2)/3)))"
+	local conflict_pattern='^\(^<<<<<<< \)\|\(^=======$\)\|\(^>>>>>>> \)'
+	#prs conflicted '%1 file(s)' "grep -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)) null \
+	#	| wc -l | ( read c; echo \$(((c+2)/3)))"
+	grep -s -r -n -e "$conflict_pattern" -- $(echo $(git diff --name-only --relative)) /dev/null > conflicts
+	prop s conflicted 'conflict(s)' "$(cat conflicts | wc -l | ( read c; echo $(((c+2)/3))))"
+	#acti conflicted 'e' "edit with vim quickfix" 'vim -q <(grep -n -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)))'
+	#acti conflicted 'e' "edit with vim quickfix" 'vim -q <(grep -n -e '$conflict_pattern' -- $(echo $(git diff --name-only --relative)))'
+	acti conflicted 'e' "edit with vim quickfix" 'vim -q conflicts'
 	prs unmerged '%1 file(s)' 'ls-files --unmerged | cut -f2 | sort -u | wc -l'
 	actg unmerged t "Run merge tool" mergetool
 	[ $prop[conflicted] = 0 ] && actg unmerged a "Add" "add \$(git diff --name-only --relative)"
-
-	prop s in_progress '%1' "$(git status --untracked-files=no HEAD | grep -q -e "You are" -e "in progress" && echo "an operation")"
+	# git diff --diff-filter=U --name-only
+	# git add $(git diff --diff-filter=U --name-only)
+	prop s in_progress '%1' "$(git status --untracked-files=no HEAD | grep -q -i -e "you are" -e "in progress" && echo "an operation")"
 	actg in_progress ' ' "Check head status" 'status --untracked-files=no HEAD' # without modifered
-	actg in_progress c "Continue rebase" 'rebase --continue'
-	actg in_progress p "Show current patch" 'am --show-current-patch'
+	git-status-parse
 	# TODO:
 	# git status -uno HEAD | grep 'rebase in progress'
 	# git commit --amend
 	# git rebase --edit-todo
 
+}
+
+select_branch()
+{
+	select a in $(git branch --format='%(refname:short)'); do break; done
+	[ $quiet = 0 ] && espeak -v en+f4 "Selected branch $a" 2> /dev/null &
+	echo $a
 }
 
 diff_to_quickfix()
@@ -211,14 +272,41 @@ diff_to_quickfix()
 	#perl -ne '/^\+\+\+ (.+)/ && { $f="$1"};/@@.*\+(\d+)/ &&print "$f:$1:$_\n"'
 }
 
+xdg-open()
+{
+
+	test "$SSH_CLIENT" \
+		&& ssh ${SSH_CLIENT%% *} xdg-open $PWD/modifications.html \
+		|| /usr/bin/xdg-open "$@"
+}
+
+modifications()
+{
+	reset-actions
+	git diff --stat
+	actg modified ' ' "show diff of the modifications" 'diff'
+	actg modified 'l' "run difftool" "difftool"
+	actg modified 'h' "html view" "diff --relative --no-prefix | pygmentize -l diff -O full -o modifications.html; xdg-open modifications.html"
+	print-actions
+	ask '>'
+	[ "$REPLY" = $'\n' ] && return
+	echo
+	[ -z "$actk[$REPLY]" ] && return
+	test "$verbose" && echo "$actk[$REPLY]"
+	eval $actk[$REPLY]
+	test "$action" && exit
+	break
+}
+
 modified()
 {
+	## checks for modified and staged(cached) files and what to do with them
+
 	prs modified '%1 file(s)' 'ls-files --modified | wc -l'
-	actg modified 't' "stat" 'diff --stat'
-	actg modified ' ' "show" 'diff'
-	actg modified u "update stage with modifications" 'add --patch'
-	actg modified s "push into stash" 'stash push --patch'
-	actg modified d "discard" 'checkout --patch'
+	acti modified ' ' "show modifications" "modifications"
+	actg modified u "update stage with modifications selectively" 'add --patch'
+	actg modified s "push into stash selectively" 'stash push --patch'
+	actg modified d "discard selectively" 'checkout --patch'
 	acti modified 'e' "edit with vim quickfix" "vim -q <(git diff -U0 --relative --no-prefix | diff_to_quickfix)"
 	actg modified 'g' "gui" "gui"
 
@@ -226,8 +314,9 @@ modified()
 	actg staged ' ' "show" 'diff --staged'
 	acti staged e "edit with vim quickfix" "vim -q <(git diff -U0 --staged --relative --no-prefix | diff_to_quickfix)"
 	actg staged c "commit" commit
-	actg staged R "unstage (reset) modifications" 'reset --patch'
-
+	actg staged g "run GUI commit tools" citool
+	actg staged r "unstage (reset) modifications selectively" 'reset --patch'
+	actg staged R "unstage (reset) all modifications" reset
 }
 
 head-branch()
@@ -236,50 +325,70 @@ head-branch()
 	acti head ' ' 'print report' report
 	actg head c 'show the last commit' 'show --stat'
 	acti head e "edit with vim quickfix" "vim -q <(git show -U0  --relative --no-prefix | diff_to_quickfix)"
-	actg head l 'list recent log' 'log --pretty="format:%ar: %ae: %h %s" --reverse -n $((LINES-2))'
-	actg head s "check head status" 'status --untracked-files=no HEAD' # without modifered
-	acti head 'k' "explore with gitk" "gitk"
+	actg head l 'list recent log' $'log --pretty="format:%ar: %ae: %h %s \e[4m%D\e[0m" --reverse -n $((LINES-2))'
+	actg head s "check the head status" 'status --untracked-files=no HEAD' # without modifered
+	acti head k "explore with gitk" "gitk"
+	acti head t "text-mode interface for Git" tig
+	actg head a "amend the last commit" "commit --amend"
+	actg head u "undo the last commit" "reset --soft HEAD~1"
 
-	rep branch '%1' 'rev-parse --abbrev-ref HEAD'
+	rep branch "%1 '@v'" 'rev-parse --abbrev-ref HEAD'
 	rep local_branches '%1' 'branch | wc -l'
-	branches_format='%(committerdate:short) - %(align:left,25)%(committerdate:relative) %(upstream:trackshort) %(end) %(align:left,25)%(objectname:short) %(refname:short)%(end) %(subject)'
+	branches_format=(
+		$'%(committerdate:short) - %(align:left,25)%(committerdate:relative)'
+		$'%(upstream:trackshort) %(end)'
+		$'%(align:left,25)\e[37m%(objectname:short)\e[0m \e[1m%(refname:short)\e[0m%(end)'
+		$'%(subject)\e[3;37m. %(authorname)\e[0m')
 	actg local_branches ' ' 'list' "for-each-ref --sort=committerdate --format '$branches_format' refs/heads"
+	actg local_branches 's' 'switch' 'switch $(select_branch)'
 	rep remote_branches '%1' 'branch --remote | wc -l'
 	actg remote_branches ' ' 'list recent' "branch --remotes --sort=committerdate --format '$branches_format' | tail -n $((LINES-2))"
 
 	prs stashes '%1' 'stash list | wc -l'
 	actg stashes ' ' "show and list stash" 'stash show; git stash list --stat'
 	actg stashes o "pop from stash" 'stash pop'
+	actg stashes d "drop the topmost stash" 'stash drop'
 	rep commited '%1' 'log -1 --format="%ar"'
 }
 
 remote()
 {
 	rep remote '%1' "config --get branch.$prop[branch].remote"
+	local h=$git_dir/FETCH_HEAD
+	test -e $h &&
+		prop l fetch_age '%1 (min) @v' \
+			"$(((`date +%s` - `stat -c %Z $h`) / 60))"
+	#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
+	if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 360 || "$prop[fetch_age]" -lt 0 ]]; then
+		git fetch --all --prune
+
+		prs gone_branches '%1' "branch -vv | grep ': gone]' | wc -l"
+		actg gone_branches 'd' "delete merged gone branches" 'branch -d $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
+		actg gone_branches 'D' "delete all gone branches" 'branch -D $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
+	fi
 	if [[ $prop[remote] ]]; then
-		local h=$git_dir/FETCH_HEAD
-		test -e $h && prop l fetch_age '%1 (min) @v' "$(((`date +%s` - `stat -c %Z $h`) / 60))"
-		#((fetch= ! ${#fetch_age} || $prop[fetch_age] > 10 || $prop[fetch_age] < 0))
-		if [[ -z "$prop[fetch_age]" || "$prop[fetch_age]" -gt 10 || "$prop[fetch_age]" -lt 0 ]]; then
-			git fetch --all --prune
-		fi
-		prs local_commits '%1' 'rev-list --count @{u}..HEAD'
-		actg local_commits ' ' "list" "log ..@{u}"
+		prs local_commits '%1' 'rev-list --count @{push}..'
+		actg local_commits ' ' "list" "log @{push}.."
 		actg local_commits p "Push to remote" push
 		rep remote_commits '%1' 'rev-list --count HEAD..@{u}'
 		actg remote_commits ' ' "list" 'log --stat HEAD..@{u}'
 		actg remote_commits l "pull from remote" 'pull --autostash'
+	else # when there is no remote assigned
+		rep head_remote '%1' "config --get branch.$prop[head].remote"
+		if hr=$prop[head_remote] && [ $prop[branch] != HEAD ]; then
+			echo head_remote $prop[head_remote]
+			echo hr $hr
+			echo branch $prop[branch]
+			actg branch p "Push new branch to remote $hr" "push --set-upstream $hr $prop[branch]"
+		fi
 	fi
 }
 
 action_itemes()
 {
-	rep action_itemes '%1' 'grep --max-depth=3 -w -eTODO -eFIXME | wc -l'
-	actg action_itemes ' ' list 'grep -w -n -eTODO -eFIXME'
+	rep action_itemes '%1' 'grep --no-messages --max-depth=2 -w -eTODO -eFIXME | wc -l'
+	actg action_itemes ' ' list 'grep --no-messages -w -n -eTODO -eFIXME'
 	acti action_itemes 'e' edit 'vim -q <(git grep -w -n -eTODO -eFIXME)'
-
-	prs gone_branches '%1' "branch -vv | grep ': gone]' | wc -l"
-	actg gone_branches 'D' "delete gone branches" 'branch -d $(git branch --format="%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(else)%(end)")'
 }
 
 untracked()
@@ -287,7 +396,8 @@ untracked()
 	prs untracked '%1 file(s)' 'ls-files --others --exclude-standard --directory| wc -l'
 	actg untracked ' ' "list" 'status --untracked-files=normal'
 	actg untracked a "add and stage" 'add --interactive'
-	actg untracked C "cleanup" 'clean --interactive -d'
+	actg untracked c "cleanup" 'clean --interactive -d'
+	acti untracked r "remove selectively" 'rm --recursive --interactive=always $(git ls-files --others --directory --exclude-standard --exclude .gitignore)'
 	actg untracked i "ignore" \
 		'ls-files --others --directory --exclude-standard --exclude .gitignore \
 		>> .gitignore'
@@ -327,15 +437,32 @@ gitw-start()
 	esac
 }
 
+fail()
+{
+	let fails+=1
+	set | grep HIST
+	history
+	setopt
+	echo
+}
+
 [ "$1" = unit-tests ] &&
 {
 	local fails=0
-	d=$(mktemp -d)
-	pushd $d
-	git-wizard --action y || { echo Fail && false }
-	let fails+=$?
-	popd
+	#d=$(mktemp -d)
+	d=/tmp/git-wizard-test
 	rm -rf $d
+	mkdir $d
+	pushd $d
+	touch empty
+	HISTFILE=qqq
+	SAVEHIST=3
+	set -o pipefail
+	git-wizard --action y | grep Initialized || fail
+	ls -A
+	#git-wizard
+	popd
+	#rm -rf $d
 	echo Fails: $fails
 	exit $fails
 }
@@ -343,7 +470,7 @@ gitw-start()
 if [ $(git rev-parse --show-toplevel 2> /dev/null) ]; then
 	gitw-start "$@"
 else
-	out "" "Here is no a git repository"
+	out "" "" "Here is no a git repository"
 	for c in $(xsel) $(xsel --clipboard); do
 		if _=$(expr match "$c" ".*:.*/.*git.*"); then
 			echo "Clipboard content looks like git url: $c"
